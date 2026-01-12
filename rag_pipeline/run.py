@@ -4,12 +4,11 @@ Run the complete RAG pipeline: chunk → embed → ingest → test.
 
 import logging
 import argparse
-from pathlib import Path
 
-# Import pipeline steps
-from rag_pipeline.chunker.chunk_json_segments import main as create_chunks
-from rag_pipeline.vectordb.chroma_ingest import main as ingest_chunks
-from rag_pipeline.vectordb.chroma_query import query
+# Import pipeline steps - use absolute imports for uv run
+from rag_pipeline.chunker.chunker import main as create_chunks
+from rag_pipeline.vectordb.injest import main as ingest_chunks
+from rag_pipeline.vectordb.query import query
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,6 +36,8 @@ def run_pipeline(reset_db: bool = False, test_query: str = None):
         logger.info("✓ Chunking complete\n")
     except Exception as e:
         logger.error(f"✗ Chunking failed: {e}")
+        import traceback
+        traceback.print_exc()
         return
     
     # Step 2: Ingest into ChromaDB
@@ -46,6 +47,8 @@ def run_pipeline(reset_db: bool = False, test_query: str = None):
         logger.info("✓ Ingestion complete\n")
     except Exception as e:
         logger.error(f"✗ Ingestion failed: {e}")
+        import traceback
+        traceback.print_exc()
         return
     
     # Step 3: Test retrieval (optional)
@@ -67,6 +70,8 @@ def run_pipeline(reset_db: bool = False, test_query: str = None):
             logger.info("✓ Test query complete\n")
         except Exception as e:
             logger.error(f"✗ Test query failed: {e}")
+            import traceback
+            traceback.print_exc()
     else:
         logger.info("[STEP 3/3] Skipping test query (use --test_query to enable)\n")
     
@@ -74,7 +79,7 @@ def run_pipeline(reset_db: bool = False, test_query: str = None):
     logger.info("✓ FULL PIPELINE COMPLETE!")
     logger.info("=" * 80)
     logger.info("\nNext steps:")
-    logger.info("  - Run test queries: python rag_pipeline/main_test_retrieval.py --q 'your query'")
+    logger.info("  - Run test queries: uv run rag_pipeline/test.py --q 'your query'")
     logger.info("  - Check stats: ls -lh rag_pipeline/output/")
     logger.info("  - View chunks: head -n 1 rag_pipeline/output/rag_dataset.jsonl | jq")
 
@@ -83,7 +88,6 @@ def main():
     parser = argparse.ArgumentParser(description="Run full RAG pipeline")
     parser.add_argument("--reset", action="store_true", help="Reset ChromaDB before ingestion")
     parser.add_argument("--test_query", help="Test query to run after ingestion")
-    parser.add_argument("--skip_chunks", action="store_true", help="Skip chunking step")
     args = parser.parse_args()
     
     run_pipeline(
